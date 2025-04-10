@@ -1,96 +1,88 @@
-# -*- coding:utf-8 -*-
 #!/usr/bin/python3
+# -*- coding:utf-8 -*-
+
 from PIL import Image
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
 import smtplib
 import qrcode
 
-t=tk.Tk()
-t.title("SMTP")
+def send_email(host, port, from_addr, to_addr, message):
+    try:
+        port = int(port)
+        with smtplib.SMTP(host=host, port=port) as smtp:
+            smtp.sendmail(from_addr=from_addr, to_addrs=to_addr, msg=message)
+        messagebox.showinfo("Success", "Email sent successfully.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to send email:\n{e}")
 
-s0=tk.StringVar()
-s1=tk.StringVar()
-s2=tk.StringVar()
-s3=tk.StringVar()
-s4=tk.StringVar()
-s5=tk.StringVar()
-s6=tk.StringVar()
-s7=tk.StringVar()
-s8=tk.StringVar()
-s9=tk.StringVar()
-s10=tk.StringVar()
+def compress_image():
+    file_path = filedialog.askopenfilename(title="Choose a file", filetypes=(("Images", "*.jpg *.jpeg *.png"),))
+    if not file_path:
+        return
 
-def smtp(h,p,fd,ta,m):
-        s=smtplib.SMTP(host=h,port=p)
-        s.sendmail(from_addr=fd,to_addrs=ta,msg=m)
+    try:
+        base, ext = os.path.splitext(file_path)
+        if ext.lower() not in [".jpg", ".jpeg", ".png"]:
+            raise ValueError("Unsupported file type.")
+        
+        img = Image.open(file_path)
+        new_path = "compr_" + os.path.basename(file_path)
+        img.save(new_path, optimize=True, quality=80)
+        messagebox.showinfo("Image Saved", f"Compressed image saved as {new_path}")
+    except Exception as e:
+        messagebox.showerror("Image Error", f"Could not compress image:\n{e}")
 
-def img():
-	fd=filedialog.askopenfilename(title="Choose a file",filetypes=(("JPG","*.jpg *.jpeg"),("PNG","*.png")))
-	fi,ex=os.path.splitext(fd)
-	if ex in [".jpg",".jpg",".png"]:
-		i=Image.open(fi+ex)
-		i.save("compr_"+fi+ex,optimize=True,quality=80)
+def generate_qr(version, box_size, border, color, data, filename):
+    try:
+        version = int(version)
+        box_size = int(box_size)
+        border = int(border)
+        if not data or not filename:
+            raise ValueError("Data and filename are required.")
 
-def qr(vers,boxsize,bor,co,da,imnm):
-	qrc=qrcode.QRCode(version=vers,box_size=boxsize,border=bor)
-	qrc.add_data(da)
-	i=qrc.make_image(fill_color=co,back_color="#FFFFFF")
-	i.save(imnm+".png")
+        qr = qrcode.QRCode(version=version, box_size=box_size, border=border)
+        qr.add_data(data)
+        img = qr.make_image(fill_color=color, back_color="white")
+        img.save(filename + ".png")
+        messagebox.showinfo("QR Code Saved", f"QR Code saved as {filename}.png")
+    except Exception as e:
+        messagebox.showerror("QR Error", f"Could not generate QR code:\n{e}")
 
-l0=tk.Label(t,text="SMTP Host (example smtp.gmail.com):")
-l0.grid(row=0,column=0)
-e0=tk.Entry(t,textvariable=s0)
-e0.grid(row=0,column=1)
-l1=tk.Label(t,text="Port:")
-l1.grid(row=1,column=0)
-e2=tk.Entry(t,textvariable=s1)
-e2.grid(row=1,column=1)
-l3=tk.Label(t,text="From email:")
-l3.grid(row=2,column=0)
-e3=tk.Entry(t,textvariable=s2)
-e3.grid(row=2,column=1)
-l4=tk.Label(t,text="To email:")
-l4.grid(row=3,column=0)
-e4=tk.Entry(t,textvariable=s3)
-e4.grid(row=3,column=1)
-l5=tk.Label(t,text="Message:")
-l5.grid(row=4,column=0)
-e5=tk.Entry(t,textvariable=s4)
-e5.grid(row=4,column=1)
+def app():
+    root = tk.Tk()
+    root.title("SMTP, Image & QR Tool")
 
-b0=tk.Button(t,text="Send",command=lambda:smtp(s0.get(),s1.get(),s2.get(),s3.get(),s4.get()))
-b0.grid(row=5,column=0,columnspan=2)
+    vars = [tk.StringVar() for _ in range(11)]
 
-b1=tk.Button(t,text="Choose and comprime image",command=lambda:img())
-b1.grid(row=6,column=0,columnspan=3)
+    labels = [
+        "SMTP host (e.g smtp.gmail.com):",
+        "Port:",
+        "From email:",
+        "To email:",
+        "Message:",
+        "QR code version:",
+        "Box size:",
+        "Border size:",
+        "QR color (e.g black):",
+        "QR data:",
+        "Output filename:"
+    ]
 
-l6=tk.Label(t,text="QRCode version:")
-l6.grid(row=7,column=0)
-e6=tk.Entry(t,textvariable=s5)
-e6.grid(row=7,column=1)
-l7=tk.Label(t,text="Box size:")
-l7.grid(row=8,column=0)
-e7=tk.Entry(t,textvariable=s6)
-e7.grid(row=8,column=1)
-l8=tk.Label(t,text="Border size:")
-l8.grid(row=9,column=0)
-e8=tk.Entry(t,textvariable=s7)
-e8.grid(row=9,column=1)
-l10=tk.Label(t,text="(English) Color:")
-l10.grid(row=10,column=0)
-e10=tk.Entry(t,textvariable=s8)
-e10.grid(row=10,column=1)
-l11=tk.Label(t,text="Data:")
-l11.grid(row=11,column=0)
-e11=tk.Entry(t,textvariable=s9)
-e11.grid(row=11,column=1)
-l12=tk.Label(t,text="Naming new file:")
-l12.grid(row=12,column=0)
-e12=tk.Entry(t,textvariable=s10)
-e12.grid(row=12,column=1)
-b2=tk.Button(t,text="Generate QRCODE",command=lambda:qr(s5.get(),s6.get(),s7.get(),s8.get(),s9.get(),s10.get()))
-b2.grid(row=13,column=0,columnspan=4)
+    for i, text in enumerate(labels):
+        tk.Label(root, text=text).grid(row=i, column=0, sticky="e", padx=5, pady=5)
+        tk.Entry(root, textvariable=vars[i]).grid(row=i, column=1, padx=5, pady=5)
 
-t.mainloop()
+    tk.Button(root, text="Send Email", command=lambda: send_email(vars[0].get(), vars[1].get(), vars[2].get(), vars[3].get(), vars[4].get())).grid(row=5, column=2, padx=5, pady=5)
+
+    tk.Button(root, text="Compress Image", command=compress_image).grid(row=6, column=2, padx=5, pady=10)
+
+    tk.Button(root, text="Generate QR Code", command=lambda: generate_qr(
+        vars[5].get(), vars[6].get(), vars[7].get(), vars[8].get(), vars[9].get(), vars[10].get()
+    )).grid(row=13, column=0, columnspan=3, pady=10)
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    app()
